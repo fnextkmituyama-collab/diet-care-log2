@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diet Care Log</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="mobile-app">
+    <header class="app-header">
+      <div>
+        <p id="today-label">今日</p>
+        <h1>ダイエット記録</h1>
+      </div>
+      <button class="icon-button reset-button" id="reset-data-button" type="button" aria-label="記録をリセット">リセット</button>
+    </header>
+
+    <section class="score-card">
+      <div class="score-ring">
+        <strong id="score-value">82</strong>
+        <span>点</span>
+      </div>
+      <div class="score-text">
+        <p class="label">今日の健康スコア</p>
+        <h2 id="score-title">かなりいい感じです</h2>
+        <p id="score-message">夕食でたんぱく質を足すと、さらにバランスが整います。</p>
+      </div>
+    </section>
+
+    <section class="calorie-card">
+      <div class="calorie-main">
+        <span>摂取カロリー</span>
+        <strong id="intake-calorie">0</strong>
+        <small>kcal / <span id="target-calorie">1,600</span>kcal</small>
+      </div>
+      <div class="progress-bar" aria-label="摂取カロリー達成率">
+        <span id="calorie-progress"></span>
+      </div>
+      <div class="calorie-row">
+        <div>
+          <span>消費</span>
+          <strong id="burned-calorie-summary">0kcal</strong>
+        </div>
+        <div>
+          <span>残り</span>
+          <strong id="remaining-calorie">1,600kcal</strong>
+        </div>
+        <div>
+          <span>体重</span>
+          <strong id="current-weight">--kg</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="trend-card">
+      <div class="section-title trend-title">
+        <div>
+          <p class="label">TREND</p>
+          <h2>経過グラフ</h2>
+        </div>
+        <div class="trend-legend">
+          <span class="weight-line">体重</span>
+          <span class="calorie-line">摂取</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="trend-chart" viewBox="0 0 360 190" role="img" aria-label="体重と摂取カロリーの推移"></svg>
+      </div>
+      <div class="chart-summary" id="chart-summary">記録が増えると推移が表示されます。</div>
+    </section>
+
+    <section class="quick-menu" aria-label="記録メニュー">
+      <button type="button" data-meal-shortcut="朝食">
+        <span>朝</span>
+        <strong id="status-breakfast">未入力</strong>
+      </button>
+      <button type="button" data-meal-shortcut="昼食">
+        <span>昼</span>
+        <strong id="status-lunch">未入力</strong>
+      </button>
+      <button type="button" data-meal-shortcut="夕食">
+        <span>夜</span>
+        <strong id="status-dinner">未入力</strong>
+      </button>
+      <button type="button" data-meal-shortcut="間食">
+        <span>間食</span>
+        <strong id="status-snack">追加</strong>
+      </button>
+    </section>
+
+    <section class="advice-card" id="advice-card">
+      <div class="advisor-face" id="advisor-face">✓</div>
+      <div>
+        <p class="label" id="advice-mode-label">アドバイス</p>
+        <h2 id="advice-title">まずは今日の食事を記録してみましょう</h2>
+        <p id="advice-message">入力した内容から、摂取カロリーや残りカロリーを自動で更新します。</p>
+      </div>
+    </section>
+
+    <section class="input-card">
+      <div class="section-title">
+        <p class="label">BODY</p>
+        <h2>体重を記録</h2>
+      </div>
+      <form class="record-form" id="weight-form">
+        <label for="record-date">日付</label>
+        <input id="record-date" type="date">
+
+        <label for="weight">体重</label>
+        <div class="unit-field">
+          <input id="weight" type="number" min="20" max="250" step="0.1" placeholder="58.4" required>
+          <span>kg</span>
+        </div>
+
+        <label for="condition">メモ</label>
+        <input id="condition" type="text" placeholder="例：朝はすっきり。夜は軽めにしたい">
+
+        <button class="primary-button" type="submit">保存する</button>
+      </form>
+    </section>
+
+    <section class="input-card">
+      <div class="section-title">
+        <p class="label">MEAL</p>
+        <h2>食事を記録</h2>
+      </div>
+      <form class="record-form" id="meal-form">
+        <label for="meal-time">タイミング</label>
+        <select id="meal-time">
+          <option>朝食</option>
+          <option>昼食</option>
+          <option>夕食</option>
+          <option>間食</option>
+        </select>
+
+        <label for="meal-name">食べたもの</label>
+        <textarea id="meal-name" rows="3" placeholder="例：玄米、焼き鮭、味噌汁、サラダ" required></textarea>
+
+        <label for="calorie">カロリー</label>
+        <div class="unit-field">
+          <input id="calorie" type="number" min="0" step="10" placeholder="520" required>
+          <span>kcal</span>
+        </div>
+
+        <button class="primary-button" type="submit">保存する</button>
+      </form>
+    </section>
+
+    <section class="input-card">
+      <div class="section-title">
+        <p class="label">EXERCISE</p>
+        <h2>運動を記録</h2>
+      </div>
+      <form class="record-form" id="exercise-form">
+        <label for="exercise-name">運動内容</label>
+        <input id="exercise-name" type="text" placeholder="例：ウォーキング" required>
+
+        <label for="exercise-time">時間</label>
+        <div class="unit-field">
+          <input id="exercise-time" type="number" min="0" step="5" placeholder="20" required>
+          <span>分</span>
+        </div>
+
+        <button class="primary-button" type="submit">保存する</button>
+      </form>
+    </section>
+
+    <section class="timeline-section">
+      <div class="section-title">
+        <p class="label">LOG</p>
+        <h2>今日の記録</h2>
+      </div>
+
+      <div class="log-list" id="log-list"></div>
+    </section>
+
+    <p class="save-notice" id="save-notice" aria-live="polite"></p>
+
+    <div class="dramatic-popup" id="dramatic-popup" aria-live="assertive" hidden>
+      <div class="dramatic-card">
+        <p id="dramatic-label">喝</p>
+        <h2 id="dramatic-title"></h2>
+        <p id="dramatic-message"></p>
+        <button type="button" id="dramatic-close">閉じる</button>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="アプリメニュー">
+      <a href="#" class="active">ホーム</a>
+      <a href="#">記録</a>
+      <a href="#">分析</a>
+      <a href="#">設定</a>
+    </nav>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
