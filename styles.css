@@ -95,10 +95,13 @@ h2 {
 }
 
 .score-card,
+.goal-card,
 .calorie-card,
+.pfc-card,
 .trend-card,
 .advice-card,
 .input-card,
+.history-section,
 .timeline-section {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -152,12 +155,37 @@ h2 {
 }
 
 .calorie-card,
+.goal-card,
+.pfc-card,
 .trend-card,
 .advice-card,
 .input-card,
+.history-section,
 .timeline-section {
   margin-top: 14px;
   padding: 16px;
+}
+
+.goal-form {
+  display: grid;
+  grid-template-columns: 0.74fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.goal-form button {
+  grid-column: 1 / -1;
+}
+
+.goal-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-green);
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.65;
 }
 
 .trend-title {
@@ -326,6 +354,97 @@ h2 {
   font-size: 0.92rem;
 }
 
+.pfc-card {
+  background:
+    radial-gradient(circle at right top, rgba(76, 163, 255, 0.14), transparent 150px),
+    #ffffff;
+}
+
+.pfc-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pfc-badge {
+  min-width: 56px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--surface-green);
+  color: var(--green-dark);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.pfc-bars {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.pfc-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 44px;
+  gap: 8px;
+  align-items: center;
+}
+
+.pfc-row span,
+.pfc-row strong {
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.pfc-row span {
+  color: var(--muted);
+}
+
+.pfc-row strong {
+  color: var(--green-dark);
+  text-align: right;
+}
+
+.pfc-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf3ef;
+}
+
+.pfc-track i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--green);
+  transition: width 0.2s ease;
+}
+
+.pfc-row:nth-child(2) .pfc-track i {
+  background: var(--orange);
+}
+
+.pfc-row:nth-child(3) .pfc-track i {
+  background: var(--blue);
+}
+
+.pfc-advice {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.pfc-source {
+  margin: 8px 0 0;
+  color: #8a9a92;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
 .quick-menu {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -410,6 +529,63 @@ h2 {
   gap: 10px;
 }
 
+.barcode-tools {
+  margin-bottom: 14px;
+}
+
+.barcode-actions,
+.barcode-search-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.secondary-button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-green);
+  color: var(--green-dark);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.secondary-button.danger {
+  background: #fff1ef;
+  color: #b3261e;
+}
+
+.barcode-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fbfefd;
+}
+
+.barcode-panel[hidden] {
+  display: none;
+}
+
+#barcode-video {
+  width: 100%;
+  min-height: 180px;
+  border-radius: 8px;
+  background: #15231d;
+  object-fit: cover;
+}
+
+#barcode-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
 label {
   color: #34443d;
   font-size: 0.9rem;
@@ -490,6 +666,42 @@ textarea:focus {
   box-shadow: 0 12px 24px rgba(49, 183, 123, 0.24);
 }
 
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.history-item time {
+  color: var(--green-dark);
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.history-item p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.history-item strong {
+  color: var(--orange);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
 .log-list {
   display: grid;
   gap: 10px;
@@ -533,6 +745,14 @@ textarea:focus {
   font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.55;
+}
+
+.log-item small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .log-item strong {
@@ -729,6 +949,16 @@ textarea:focus {
 
   .calorie-row {
     grid-template-columns: 1fr;
+  }
+
+  .goal-form,
+  .pfc-row,
+  .history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .pfc-row strong {
+    text-align: left;
   }
 
   .quick-menu {

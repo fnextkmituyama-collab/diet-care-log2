@@ -24,8 +24,34 @@
       <div class="score-text">
         <p class="label">今日の健康スコア</p>
         <h2 id="score-title">かなりいい感じです</h2>
-        <p id="score-message">夕食でたんぱく質を足すと、さらにバランスが整います。</p>
+        <p id="score-message">食事と運動を記録すると、今日の状態を自動で判定します。</p>
       </div>
+    </section>
+
+    <section class="goal-card">
+      <div class="section-title">
+        <p class="label">GOAL</p>
+        <h2>目標設定</h2>
+      </div>
+      <form class="goal-form" id="goal-form">
+        <label for="goal-current-weight">現在</label>
+        <div class="unit-field">
+          <input id="goal-current-weight" type="number" step="0.1" min="20" max="250" placeholder="58.0">
+          <span>kg</span>
+        </div>
+
+        <label for="goal-target-weight">目標</label>
+        <div class="unit-field">
+          <input id="goal-target-weight" type="number" step="0.1" min="20" max="250" placeholder="55.0">
+          <span>kg</span>
+        </div>
+
+        <label for="goal-date">期限</label>
+        <input id="goal-date" type="date">
+
+        <button class="primary-button" type="submit">目標を保存</button>
+      </form>
+      <div class="goal-result" id="goal-result">目標体重と期限を入れると、1日の目安を表示します。</div>
     </section>
 
     <section class="calorie-card">
@@ -53,6 +79,35 @@
       </div>
     </section>
 
+    <section class="pfc-card">
+      <div class="section-title trend-title">
+        <div>
+          <p class="label">PFC</p>
+          <h2>食事バランス</h2>
+        </div>
+        <span class="pfc-badge" id="pfc-score">未記録</span>
+      </div>
+      <div class="pfc-bars">
+        <div class="pfc-row">
+          <span>P たんぱく質</span>
+          <div class="pfc-track"><i id="protein-bar"></i></div>
+          <strong id="protein-value">0g</strong>
+        </div>
+        <div class="pfc-row">
+          <span>F 脂質</span>
+          <div class="pfc-track"><i id="fat-bar"></i></div>
+          <strong id="fat-value">0g</strong>
+        </div>
+        <div class="pfc-row">
+          <span>C 炭水化物</span>
+          <div class="pfc-track"><i id="carb-bar"></i></div>
+          <strong id="carb-value">0g</strong>
+        </div>
+      </div>
+      <p class="pfc-advice" id="pfc-advice">食べたものからざっくりPFCを自動推定します。</p>
+      <p class="pfc-source">PFC目安: P14:F25:C61</p>
+    </section>
+
     <section class="trend-card">
       <div class="section-title trend-title">
         <div>
@@ -71,22 +126,10 @@
     </section>
 
     <section class="quick-menu" aria-label="記録メニュー">
-      <button type="button" data-meal-shortcut="朝食">
-        <span>朝</span>
-        <strong id="status-breakfast">未入力</strong>
-      </button>
-      <button type="button" data-meal-shortcut="昼食">
-        <span>昼</span>
-        <strong id="status-lunch">未入力</strong>
-      </button>
-      <button type="button" data-meal-shortcut="夕食">
-        <span>夜</span>
-        <strong id="status-dinner">未入力</strong>
-      </button>
-      <button type="button" data-meal-shortcut="間食">
-        <span>間食</span>
-        <strong id="status-snack">追加</strong>
-      </button>
+      <button type="button" data-meal-shortcut="朝食"><span>朝</span><strong id="status-breakfast">未入力</strong></button>
+      <button type="button" data-meal-shortcut="昼食"><span>昼</span><strong id="status-lunch">未入力</strong></button>
+      <button type="button" data-meal-shortcut="夕食"><span>夜</span><strong id="status-dinner">未入力</strong></button>
+      <button type="button" data-meal-shortcut="間食"><span>間食</span><strong id="status-snack">追加</strong></button>
     </section>
 
     <section class="advice-card" id="advice-card">
@@ -94,7 +137,7 @@
       <div>
         <p class="label" id="advice-mode-label">アドバイス</p>
         <h2 id="advice-title">まずは今日の食事を記録してみましょう</h2>
-        <p id="advice-message">入力した内容から、摂取カロリーや残りカロリーを自動で更新します。</p>
+        <p id="advice-message">入力した内容から、摂取カロリーやPFCバランスを自動で更新します。</p>
       </div>
     </section>
 
@@ -106,16 +149,13 @@
       <form class="record-form" id="weight-form">
         <label for="record-date">日付</label>
         <input id="record-date" type="date">
-
         <label for="weight">体重</label>
         <div class="unit-field">
           <input id="weight" type="number" min="20" max="250" step="0.1" placeholder="58.4" required>
           <span>kg</span>
         </div>
-
         <label for="condition">メモ</label>
         <input id="condition" type="text" placeholder="例：朝はすっきり。夜は軽めにしたい">
-
         <button class="primary-button" type="submit">保存する</button>
       </form>
     </section>
@@ -125,6 +165,21 @@
         <p class="label">MEAL</p>
         <h2>食事を記録</h2>
       </div>
+      <div class="barcode-tools">
+        <div class="barcode-actions">
+          <button class="secondary-button" id="scan-barcode-button" type="button">バーコードで探す</button>
+          <button class="secondary-button danger" id="stop-scan-button" type="button" hidden>停止</button>
+        </div>
+        <div class="barcode-panel" id="barcode-panel" hidden>
+          <video id="barcode-video" playsinline muted></video>
+          <label for="barcode-manual">番号で検索</label>
+          <div class="barcode-search-row">
+            <input id="barcode-manual" type="text" inputmode="numeric" placeholder="例：4900000000000">
+            <button class="secondary-button" id="lookup-barcode-button" type="button">検索</button>
+          </div>
+          <p id="barcode-status">バーコードを枠内に入れるか、番号を入力してください。</p>
+        </div>
+      </div>
       <form class="record-form" id="meal-form">
         <label for="meal-time">タイミング</label>
         <select id="meal-time">
@@ -133,16 +188,13 @@
           <option>夕食</option>
           <option>間食</option>
         </select>
-
         <label for="meal-name">食べたもの</label>
         <textarea id="meal-name" rows="3" placeholder="例：玄米、焼き鮭、味噌汁、サラダ" required></textarea>
-
         <label for="calorie">カロリー</label>
         <div class="unit-field">
           <input id="calorie" type="number" min="0" step="10" placeholder="520" required>
           <span>kcal</span>
         </div>
-
         <button class="primary-button" type="submit">保存する</button>
       </form>
     </section>
@@ -155,15 +207,21 @@
       <form class="record-form" id="exercise-form">
         <label for="exercise-name">運動内容</label>
         <input id="exercise-name" type="text" placeholder="例：ウォーキング" required>
-
         <label for="exercise-time">時間</label>
         <div class="unit-field">
           <input id="exercise-time" type="number" min="0" step="5" placeholder="20" required>
           <span>分</span>
         </div>
-
         <button class="primary-button" type="submit">保存する</button>
       </form>
+    </section>
+
+    <section class="history-section">
+      <div class="section-title">
+        <p class="label">HISTORY</p>
+        <h2>日別履歴</h2>
+      </div>
+      <div class="history-list" id="history-list"></div>
     </section>
 
     <section class="timeline-section">
@@ -171,7 +229,6 @@
         <p class="label">LOG</p>
         <h2>今日の記録</h2>
       </div>
-
       <div class="log-list" id="log-list"></div>
     </section>
 
@@ -188,12 +245,11 @@
 
     <nav class="bottom-nav" aria-label="アプリメニュー">
       <a href="#" class="active">ホーム</a>
-      <a href="#">記録</a>
-      <a href="#">分析</a>
-      <a href="#">設定</a>
+      <a href="#meal-form">記録</a>
+      <a href="#history-list">履歴</a>
+      <a href="#goal-form">目標</a>
     </nav>
   </main>
-
   <script src="app.js"></script>
 </body>
 </html>
