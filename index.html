@@ -13,7 +13,13 @@
         <p id="today-label">今日</p>
         <h1>ダイエット記録</h1>
       </div>
-      <button class="icon-button reset-button" id="reset-data-button" type="button" aria-label="記録をリセット">リセット</button>
+      <div class="header-actions">
+        <label class="character-toggle" for="character-toggle">
+          <input id="character-toggle" type="checkbox" checked>
+          <span>キャラ</span>
+        </label>
+        <button class="icon-button reset-button" id="reset-data-button" type="button" aria-label="記録をリセット">リセット</button>
+      </div>
     </header>
 
     <section class="score-card">
@@ -165,6 +171,36 @@
         <p class="label">MEAL</p>
         <h2>食事を記録</h2>
       </div>
+      <div class="photo-tools">
+        <label class="photo-capture" for="meal-photo">
+          <input id="meal-photo" type="file" accept="image/*" capture="environment">
+          <span>写真でざっくり入力</span>
+        </label>
+        <div class="photo-panel" id="photo-panel" hidden>
+          <img id="meal-photo-preview" alt="食事写真のプレビュー">
+          <div class="photo-ai-card">
+            <p class="label">PHOTO ASSIST</p>
+            <h3 id="photo-suggestion-title">写真から近い料理タイプを選んでください</h3>
+            <p id="photo-suggestion-message">APIキーなしの安全版なので、料理タイプと量からざっくり計算します。</p>
+          </div>
+          <div class="meal-type-grid" id="meal-type-grid" aria-label="料理タイプ">
+            <button type="button" data-photo-type="balanced">定食っぽい</button>
+            <button type="button" data-photo-type="noodle">麺・丼っぽい</button>
+            <button type="button" data-photo-type="fried">揚げ物・ジャンク</button>
+            <button type="button" data-photo-type="sweets">甘いもの</button>
+            <button type="button" data-photo-type="protein">肉・魚メイン</button>
+            <button type="button" data-photo-type="light">サラダ・軽食</button>
+          </div>
+          <label for="portion-size">量</label>
+          <select id="portion-size">
+            <option value="0.75">少なめ</option>
+            <option value="1" selected>普通</option>
+            <option value="1.35">多め</option>
+            <option value="1.7">かなり多め</option>
+          </select>
+          <button class="secondary-button" id="apply-photo-estimate" type="button">この内容で入力する</button>
+        </div>
+      </div>
       <div class="barcode-tools">
         <div class="barcode-actions">
           <button class="secondary-button" id="scan-barcode-button" type="button">バーコードで探す</button>
@@ -236,6 +272,17 @@
 
     <div class="dramatic-popup" id="dramatic-popup" aria-live="assertive" hidden>
       <div class="dramatic-card">
+        <div class="angry-character" id="angry-character" aria-hidden="true">
+          <div class="character-head">
+            <span class="character-hair"></span>
+            <span class="character-brow left"></span>
+            <span class="character-brow right"></span>
+            <span class="character-eye left"></span>
+            <span class="character-eye right"></span>
+            <span class="character-mouth"></span>
+          </div>
+          <div class="character-body"></div>
+        </div>
         <p id="dramatic-label">喝</p>
         <h2 id="dramatic-title"></h2>
         <p id="dramatic-message"></p>

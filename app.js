@@ -1,6 +1,7 @@
 const STORAGE_KEY = "dietCareLog.records";
 const VIOLATION_KEY = "dietCareLog.violations";
 const GOAL_KEY = "dietCareLog.goal";
+const CHARACTER_SETTING_KEY = "dietCareLog.showAngryCharacter";
 const DEFAULT_TARGET_CALORIES = 1600;
 const CALORIES_PER_EXERCISE_MINUTE = 6;
 const IDEAL_PFC_RATIO = { protein: 0.14, fat: 0.25, carb: 0.61 };
@@ -9,9 +10,11 @@ const records = loadRecords();
 const violationCounts = loadViolationCounts();
 let goal = loadGoal();
 let activeAngryAdvice = null;
+let showAngryCharacter = loadCharacterSetting();
 let barcodeStream = null;
 let barcodeScanTimer = null;
 let pendingScannedProduct = null;
+let pendingPhotoMeal = null;
 
 const angryMessages = {
   oko: [
@@ -53,6 +56,7 @@ const angryMessages = {
 const elements = {
   todayLabel: document.querySelector("#today-label"),
   resetDataButton: document.querySelector("#reset-data-button"),
+  characterToggle: document.querySelector("#character-toggle"),
   goalForm: document.querySelector("#goal-form"),
   goalCurrentWeight: document.querySelector("#goal-current-weight"),
   goalTargetWeight: document.querySelector("#goal-target-weight"),
@@ -61,6 +65,14 @@ const elements = {
   weightForm: document.querySelector("#weight-form"),
   mealForm: document.querySelector("#meal-form"),
   exerciseForm: document.querySelector("#exercise-form"),
+  mealPhoto: document.querySelector("#meal-photo"),
+  photoPanel: document.querySelector("#photo-panel"),
+  mealPhotoPreview: document.querySelector("#meal-photo-preview"),
+  photoSuggestionTitle: document.querySelector("#photo-suggestion-title"),
+  photoSuggestionMessage: document.querySelector("#photo-suggestion-message"),
+  mealTypeGrid: document.querySelector("#meal-type-grid"),
+  portionSize: document.querySelector("#portion-size"),
+  applyPhotoEstimate: document.querySelector("#apply-photo-estimate"),
   scanBarcodeButton: document.querySelector("#scan-barcode-button"),
   stopScanButton: document.querySelector("#stop-scan-button"),
   barcodePanel: document.querySelector("#barcode-panel"),
@@ -104,6 +116,7 @@ const elements = {
   adviceMessage: document.querySelector("#advice-message"),
   dramaticPopup: document.querySelector("#dramatic-popup"),
   dramaticLabel: document.querySelector("#dramatic-label"),
+  angryCharacter: document.querySelector("#angry-character"),
   dramaticTitle: document.querySelector("#dramatic-title"),
   dramaticMessage: document.querySelector("#dramatic-message"),
   dramaticClose: document.querySelector("#dramatic-close"),
@@ -122,6 +135,7 @@ function initialize() {
   const today = toDateInputValue(new Date());
   elements.recordDate.value = today;
   elements.todayLabel.textContent = formatDateLabel(today);
+  elements.characterToggle.checked = showAngryCharacter;
   fillGoalForm();
 
   document.querySelectorAll("[data-meal-shortcut]").forEach((button) => {
@@ -135,6 +149,10 @@ function initialize() {
   elements.weightForm.addEventListener("submit", handleWeightSubmit);
   elements.mealForm.addEventListener("submit", handleMealSubmit);
   elements.exerciseForm.addEventListener("submit", handleExerciseSubmit);
+  elements.mealPhoto.addEventListener("change", handleMealPhotoChange);
+  elements.mealTypeGrid.addEventListener("click", handleMealTypeClick);
+  elements.portionSize.addEventListener("change", updatePhotoEstimate);
+  elements.applyPhotoEstimate.addEventListener("click", applyPhotoEstimate);
   elements.scanBarcodeButton.addEventListener("click", startBarcodeScanner);
   elements.stopScanButton.addEventListener("click", stopBarcodeScanner);
   elements.lookupBarcodeButton.addEventListener("click", () => lookupBarcode(elements.barcodeManual.value));
@@ -145,6 +163,7 @@ function initialize() {
     }
   });
   elements.resetDataButton.addEventListener("click", resetAllData);
+  elements.characterToggle.addEventListener("change", handleCharacterToggle);
   elements.dramaticClose.addEventListener("click", hideDramaticPopup);
   elements.dramaticPopup.addEventListener("click", (event) => {
     if (event.target === elements.dramaticPopup) hideDramaticPopup();
@@ -206,13 +225,17 @@ function handleMealSubmit(event) {
     value: `${formatNumber(calories)}kcal`,
     calories,
     pfc,
+    photo: pendingPhotoMeal && pendingPhotoMeal.photo ? pendingPhotoMeal.photo : null,
   };
 
   addRecord(record);
   triggerAngryAdvice(record);
   pendingScannedProduct = null;
+  pendingPhotoMeal = null;
   elements.mealName.value = "";
   elements.calorie.value = "";
+  elements.mealPhoto.value = "";
+  elements.photoPanel.hidden = true;
   showNotice("食事を保存しました");
 }
 
@@ -238,6 +261,80 @@ function handleExerciseSubmit(event) {
   elements.exerciseName.value = "";
   elements.exerciseTime.value = "";
   showNotice("運動を保存しました");
+}
+
+function handleCharacterToggle() {
+  showAngryCharacter = elements.characterToggle.checked;
+  localStorage.setItem(CHARACTER_SETTING_KEY, JSON.stringify(showAngryCharacter));
+  elements.dramaticPopup.classList.toggle("character-off", !showAngryCharacter);
+  showNotice(showAngryCharacter ? "怒りキャラを表示します" : "怒りキャラを非表示にしました");
+}
+
+async function handleMealPhotoChange(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  try {
+    const photo = await resizeImage(file, 720, 0.72);
+    pendingPhotoMeal = {
+      photo,
+      type: guessMealTypeFromName(file.name),
+      portion: Number(elements.portionSize.value || 1),
+      estimate: null,
+    };
+    elements.mealPhotoPreview.src = photo;
+    elements.photoPanel.hidden = false;
+    setActiveMealType(pendingPhotoMeal.type);
+    updatePhotoEstimate();
+    showNotice("写真を読み込みました");
+  } catch (error) {
+    pendingPhotoMeal = null;
+    showNotice("写真を読み込めませんでした");
+  }
+}
+
+function handleMealTypeClick(event) {
+  const button = event.target.closest("[data-photo-type]");
+  if (!button || !pendingPhotoMeal) return;
+  pendingPhotoMeal.type = button.dataset.photoType;
+  setActiveMealType(pendingPhotoMeal.type);
+  updatePhotoEstimate();
+}
+
+function updatePhotoEstimate() {
+  if (!pendingPhotoMeal) return;
+  pendingPhotoMeal.portion = Number(elements.portionSize.value || 1);
+  pendingPhotoMeal.estimate = createPhotoMealEstimate(pendingPhotoMeal.type, pendingPhotoMeal.portion);
+  const estimate = pendingPhotoMeal.estimate;
+  elements.photoSuggestionTitle.textContent = `${estimate.name}っぽい / 約${formatNumber(estimate.calories)}kcal`;
+  elements.photoSuggestionMessage.textContent =
+    `P${Math.round(estimate.pfc.protein)}g F${Math.round(estimate.pfc.fat)}g C${Math.round(estimate.pfc.carb)}g。写真だけでは断定できないので、近いタイプを選んで保存してください。`;
+  fillMealFormFromPhotoEstimate();
+}
+
+function applyPhotoEstimate() {
+  if (!pendingPhotoMeal || !pendingPhotoMeal.estimate) {
+    showNotice("先に写真を選んでください");
+    return;
+  }
+  const estimate = pendingPhotoMeal.estimate;
+  fillMealFormFromPhotoEstimate();
+  showNotice("写真のざっくり推定を入力しました");
+  elements.mealName.focus();
+}
+
+function fillMealFormFromPhotoEstimate() {
+  if (!pendingPhotoMeal || !pendingPhotoMeal.estimate) return;
+  const estimate = pendingPhotoMeal.estimate;
+  elements.mealName.value = `${estimate.name}（写真からざっくり）`;
+  elements.calorie.value = estimate.calories;
+  pendingScannedProduct = null;
+}
+
+function setActiveMealType(type) {
+  elements.mealTypeGrid.querySelectorAll("[data-photo-type]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.photoType === type);
+  });
 }
 
 function addRecord(record) {
@@ -465,6 +562,9 @@ function renderRecordItem(record) {
   const pfcText = record.type === "meal" && record.pfc
     ? `<small>P${Math.round(record.pfc.protein)}g F${Math.round(record.pfc.fat)}g C${Math.round(record.pfc.carb)}g</small>`
     : "";
+  const photo = record.photo
+    ? `<img class="record-photo" src="${escapeHtml(record.photo)}" alt="食事写真">`
+    : "";
   return `
     <article class="log-item">
       <span class="log-dot ${record.type}"></span>
@@ -474,6 +574,7 @@ function renderRecordItem(record) {
         ${pfcText}
       </div>
       <strong>${escapeHtml(record.value)}</strong>
+      ${photo}
     </article>
   `;
 }
@@ -483,7 +584,7 @@ function renderAdvice() {
     const isRage = activeAngryAdvice.mode === "rage";
     elements.adviceCard.classList.toggle("rage-mode", isRage);
     elements.adviceCard.classList.toggle("oko-mode", !isRage);
-    elements.advisorFace.textContent = "!";
+    elements.advisorFace.textContent = isRage ? "怒" : "喝";
     elements.adviceModeLabel.textContent = isRage ? "強めの喝" : "今日の喝";
     elements.adviceTitle.textContent = activeAngryAdvice.title;
     elements.adviceMessage.textContent = activeAngryAdvice.text;
@@ -632,6 +733,14 @@ function getNutrimentNumber(nutriments, key) {
 
 function getMealPfc(mealName, calories) {
   if (
+    pendingPhotoMeal &&
+    pendingPhotoMeal.estimate &&
+    mealName.includes(pendingPhotoMeal.estimate.name) &&
+    Number(pendingPhotoMeal.estimate.calories) === Number(calories)
+  ) {
+    return pendingPhotoMeal.estimate.pfc;
+  }
+  if (
     pendingScannedProduct &&
     pendingScannedProduct.pfc &&
     pendingScannedProduct.name === mealName &&
@@ -640,6 +749,60 @@ function getMealPfc(mealName, calories) {
     return pendingScannedProduct.pfc;
   }
   return estimatePfc(mealName, calories);
+}
+
+function createPhotoMealEstimate(type, portion = 1) {
+  const presets = {
+    balanced: { name: "定食", calories: 650, ratio: { protein: 0.17, fat: 0.25, carb: 0.58 } },
+    noodle: { name: "麺・丼もの", calories: 760, ratio: { protein: 0.14, fat: 0.25, carb: 0.61 } },
+    fried: { name: "揚げ物・ジャンク", calories: 880, ratio: { protein: 0.15, fat: 0.42, carb: 0.43 } },
+    sweets: { name: "スイーツ", calories: 430, ratio: { protein: 0.06, fat: 0.40, carb: 0.54 } },
+    protein: { name: "肉・魚メイン", calories: 560, ratio: { protein: 0.28, fat: 0.34, carb: 0.38 } },
+    light: { name: "サラダ・軽食", calories: 320, ratio: { protein: 0.18, fat: 0.20, carb: 0.62 } },
+  };
+  const preset = presets[type] || presets.balanced;
+  const calories = Math.round((preset.calories * portion) / 10) * 10;
+  return {
+    name: preset.name,
+    calories,
+    pfc: {
+      protein: Math.round((calories * preset.ratio.protein) / 4),
+      fat: Math.round((calories * preset.ratio.fat) / 9),
+      carb: Math.round((calories * preset.ratio.carb) / 4),
+    },
+  };
+}
+
+function guessMealTypeFromName(fileName) {
+  const text = String(fileName || "").toLowerCase();
+  if (/(ramen|noodle|pasta|rice|don|udon|soba|麺|丼|ごはん|ラーメン)/.test(text)) return "noodle";
+  if (/(fried|burger|pizza|potato|katsu|唐揚げ|揚げ|マック|ピザ)/.test(text)) return "fried";
+  if (/(cake|sweet|dessert|ice|choco|ケーキ|アイス|チョコ)/.test(text)) return "sweets";
+  if (/(chicken|fish|meat|steak|protein|肉|魚|鶏)/.test(text)) return "protein";
+  if (/(salad|light|vegetable|サラダ|野菜)/.test(text)) return "light";
+  return "balanced";
+}
+
+function resizeImage(file, maxSize, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = reject;
+      image.onload = () => {
+        const scale = Math.min(maxSize / image.width, maxSize / image.height, 1);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function renderTrendChart() {
@@ -844,6 +1007,8 @@ function showDramaticPopup(advice) {
   const isRage = advice.mode === "rage";
   elements.dramaticPopup.classList.toggle("rage-mode", isRage);
   elements.dramaticPopup.classList.toggle("oko-mode", !isRage);
+  elements.dramaticPopup.classList.toggle("character-off", !showAngryCharacter);
+  elements.angryCharacter.dataset.mode = isRage ? "rage" : "oko";
   elements.dramaticLabel.textContent = isRage ? "強めの喝" : "今日の喝";
   elements.dramaticTitle.textContent = advice.title;
   elements.dramaticMessage.textContent = advice.text;
@@ -876,6 +1041,15 @@ function loadGoal() {
 
 function saveGoal() {
   localStorage.setItem(GOAL_KEY, JSON.stringify(goal));
+}
+
+function loadCharacterSetting() {
+  try {
+    const saved = localStorage.getItem(CHARACTER_SETTING_KEY);
+    return saved === null ? true : JSON.parse(saved);
+  } catch {
+    return true;
+  }
 }
 
 function showNotice(message) {
